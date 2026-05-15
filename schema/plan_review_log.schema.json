@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lex-intelligentia.example/plan-review-log.schema.json",
+  "title": "Plan Review Log",
+  "description": "Structured audit log of plan review rounds, embedded in a plan markdown file. The validator parses the markdown into this conceptual structure.",
+  "type": "object",
+  "properties": {
+    "rounds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Round" }
+    }
+  },
+  "required": ["rounds"],
+  "$defs": {
+    "Round": {
+      "type": "object",
+      "properties": {
+        "round_number": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "reviewer_model": { "type": "string" },
+        "reviewer_prompt": {
+          "type": "string",
+          "description": "Name and version of the reviewer prompt template, e.g. code-plan-reviewer@v0.1"
+        },
+        "date": { "type": "string", "format": "date" },
+        "spec_reviewed": { "type": "string" },
+        "plan_reviewed": { "type": "string" },
+        "diverse_critics": { "type": "boolean" },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Finding" }
+        }
+      },
+      "required": [
+        "round_number",
+        "reviewer_model",
+        "reviewer_prompt",
+        "date",
+        "plan_reviewed",
+        "findings"
+      ]
+    },
+    "Finding": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^R\\d+-PRC\\d{3}$",
+          "description": "Round-scoped finding ID, e.g. R1-PRC001"
+        },
+        "title": { "type": "string", "maxLength": 80 },
+        "status": {
+          "type": "string",
+          "enum": ["Open", "Resolved", "No Plan Change"]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["Critical", "Major", "Minor", "Advisory"]
+        },
+        "location": { "type": "string" },
+        "reviewer_concern": { "type": "string", "minLength": 1 },
+        "why_it_matters": { "type": "string", "minLength": 1 },
+        "decision": {
+          "type": "string",
+          "enum": ["pending", "Change plan", "No plan change"]
+        },
+        "plan_changes_made": {
+          "type": "string",
+          "description": "Required when status is Resolved. References to plan sections that changed."
+        },
+        "no_change_rationale": {
+          "type": "string",
+          "description": "Required when status is No Plan Change. Must explain concretely (8+ words)."
+        },
+        "human_approver": {
+          "type": "string",
+          "description": "Identifier of the human who approved. Required when status is Resolved or No Plan Change."
+        },
+        "approval_status": {
+          "type": "string",
+          "enum": ["pending", "Approved", "Rejected", "Deferred"]
+        },
+        "approval_date": { "type": "string" },
+        "cnj_615_relevance": {
+          "type": "string",
+          "enum": ["alto_risco", "baixo_risco", "nao_aplicavel"],
+          "description": "Optional. Used for judicial plans subject to CNJ Resolução 615/2025."
+        },
+        "contestabilidade_observada": {
+          "type": "boolean",
+          "description": "Optional. Used for judicial plans subject to CNJ Resolução 615/2025."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "status",
+        "severity",
+        "location",
+        "reviewer_concern",
+        "why_it_matters",
+        "decision",
+        "approval_status"
+      ],
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "Resolved" } } },
+          "then": {
+            "required": ["plan_changes_made", "human_approver"],
+            "properties": {
+              "approval_status": { "const": "Approved" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "No Plan Change" } } },
+          "then": {
+            "required": ["no_change_rationale", "human_approver"],
+            "properties": {
+              "approval_status": { "const": "Approved" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
