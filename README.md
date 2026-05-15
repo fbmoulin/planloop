@@ -23,22 +23,31 @@ plan-review-cycle/
 
 ## Install
 
+This repository is named `planloop`; the Claude skill inside is named
+`plan-review-cycle` (the `name:` field in `SKILL.md`). The install
+copies the skill contents into a directory named after the skill, not
+the repo.
+
 For personal use across all your projects:
 
 ```bash
-cp -r plan-review-cycle ~/.claude/skills/
+git clone https://github.com/fbmoulin/planloop.git
+mkdir -p ~/.claude/skills/plan-review-cycle
+cp -r planloop/SKILL.md planloop/reviewers planloop/scripts planloop/schema ~/.claude/skills/plan-review-cycle/
 ```
 
 For project-local use only:
 
 ```bash
-cp -r plan-review-cycle .claude/skills/
+mkdir -p .claude/skills/plan-review-cycle
+cp -r planloop/SKILL.md planloop/reviewers planloop/scripts planloop/schema .claude/skills/plan-review-cycle/
 ```
 
 For Lex Intelligentia ecosystem integration, vendor it next to your transversal skills:
 
 ```bash
-cp -r plan-review-cycle lex-skills/transversal/
+mkdir -p lex-skills/transversal/plan-review-cycle
+cp -r planloop/SKILL.md planloop/reviewers planloop/scripts planloop/schema lex-skills/transversal/plan-review-cycle/
 ```
 
 ## Quick start
