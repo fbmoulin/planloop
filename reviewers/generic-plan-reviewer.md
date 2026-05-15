@@ -1,6 +1,6 @@
 # Generic Plan Reviewer Prompt
 
-**Template version:** v0.1
+**Template version:** v0.3
 **Use for:** product specs, content strategies, research plans, marketing plans, and any plan that is neither clearly software nor clearly judicial.
 
 ---
@@ -60,14 +60,14 @@ Advisory: Non-blocking suggestions.
 
 ## Output format
 
-Produce this exact structure. Do not add preamble.
+Produce this exact structure. Do not add preamble. Do NOT add a Recommendations section or any other section beyond Findings — every observation worth raising goes under Findings with explicit Severity, including advisory observations (Severity: Advisory).
 
 ## Plan Verification Review
 
 Status: Approved | Issues Found
 
 Round: [ROUND_NUMBER]
-Reviewer prompt: generic-plan-reviewer@v0.1
+Reviewer prompt: generic-plan-reviewer@v0.3
 
 ### Findings
 
@@ -85,7 +85,5 @@ Why it matters:
 Suggested resolution:
 [One concrete proposal.]
 
-### Recommendations
-
-[Advisory items only, brief.]
+[Repeat per finding. Advisory findings follow the same structure with shorter prose, since they do not block execution.]
 ```

@@ -1,6 +1,6 @@
 # Code Plan Reviewer Prompt
 
-**Template version:** v0.2
+**Template version:** v0.3
 **Use for:** software implementation plans, refactors, infrastructure changes, AWS CDK changes, monorepo work, migration plans.
 
 ---
@@ -64,14 +64,14 @@ Advisory: Non-blocking suggestions. Improvements that would be nice but the plan
 
 ## Output format
 
-Produce this exact structure. Do not add preamble. Do not add closing remarks.
+Produce this exact structure. Do not add preamble. Do not add closing remarks. Do NOT add a Recommendations section or any other section beyond Findings — every observation worth raising goes under Findings with explicit Severity, including advisory observations (Severity: Advisory). A single output namespace removes ambiguity for the orchestrator that has to copy these findings into the Plan Review Log.
 
 ## Plan Verification Review
 
 Status: Approved | Issues Found
 
 Round: [ROUND_NUMBER]
-Reviewer prompt: code-plan-reviewer@v0.2
+Reviewer prompt: code-plan-reviewer@v0.3
 
 ### Findings
 
@@ -89,11 +89,7 @@ Why it matters:
 Suggested resolution:
 [One concrete proposal: change task N step M, add a new task, restructure phase X, etc. Be specific.]
 
-[Repeat for each finding, numbered sequentially with three-digit IDs.]
-
-### Recommendations
-
-[Advisory items only, if any. These do not block approval. Brief.]
+[Repeat for each finding, numbered sequentially with three-digit IDs. Advisory findings use the same structure with shorter Concern/Why-it-matters/Suggested-resolution prose, since they do not block execution.]
 ```
 
 ---

@@ -187,3 +187,99 @@ violations now reliably classify as Critical; polish-only language now
 reliably classifies as Advisory. As a side effect, the reviewer's
 overall framing is sharper around contract semantics. No regressions
 detected. Recommend installing v0.2 as the default.
+
+---
+
+# Round 3 — `code-plan-reviewer@v0.3` (output-format fix)
+
+Verification round after applying the family-wide v0.3 edit: removed
+the `### Recommendations` section from all three reviewer prompts
+(code, judicial, generic) and added an explicit inverse rule. All
+findings — including Advisory — now go under `### Findings` with
+explicit `Severity:`.
+
+## What changed in v0.3
+
+Single edit applied uniformly across `reviewers/code-plan-reviewer.md`,
+`reviewers/judicial-plan-reviewer.md`, and `reviewers/generic-plan-reviewer.md`:
+
+1. Version frontmatter bumped to `v0.3`.
+2. Output template lost `### Recommendations` and gained an inverse
+   rule in the "Output format" preamble: "Do NOT add a Recommendations
+   section or any other section beyond Findings — every observation
+   worth raising goes under Findings with explicit Severity, including
+   advisory observations (Severity: Advisory)."
+3. Output template's last-line guidance now reads "Advisory findings
+   use the same structure with shorter prose, since they do not block
+   execution."
+4. `Reviewer prompt:` line in the output template bumped to `@v0.3`.
+
+`SKILL.md` was checked and did not require changes (no references to
+`Recommendations` section anywhere; Advisory severity was already
+properly handled by the Plan Review Log schema and validator).
+
+## R3 — Code reviewer v0.3 on jsoncheck seeded plan
+
+8 findings, 2 Critical + 2 Major + 3 Minor + 1 Advisory. The reviewer
+followed v0.3 exactly:
+
+- No `### Recommendations` heading produced.
+- R3-PRC008 (Task 7 polish) appears as a numbered Finding under
+  `### Findings` with `Severity: Advisory` and full Concern / Why it
+  matters / Suggested resolution structure.
+
+## Comparison across the three rounds
+
+| Seed | v0.1 R1 | v0.2 R2 | v0.3 R3 | Expected |
+|---|---|---|---|---|
+| C1 (YAML missing) | Critical | Critical | Critical | Critical ✓ |
+| C2 (exit 99 contradiction) | Major | Critical | Critical | Critical ✓ |
+| Related (exit 2 mapping incomplete) | Major | Critical | Major | (in range) |
+| TDD ordering | Major | Major | Major | Major ✓ |
+| m1 (vague coverage) | Minor | Minor | Minor | Minor ✓ |
+| M1 (`--verbose` scope creep) | Minor | Minor | Minor | Minor ✓ |
+| NFR verification gap | Minor | Major | Minor | (legitimate either way) |
+| A1 (Task 7 polish) | Minor | Advisory | Advisory | Advisory ✓ |
+
+Distribution shift across rounds (same plan):
+
+|   | Critical | Major | Minor | Advisory | Total |
+|---|---|---|---|---|---|
+| v0.1 R1 | 1 | 3 | 4 | 0 | 8 |
+| v0.2 R2 | 3 | 2 | 2 | 1 | 8 |
+| v0.3 R3 | 2 | 2 | 3 | 1 | 8 |
+
+Two minor downgrades in v0.3 vs v0.2 (exit-2 mapping and NFR
+verification dropped one level each). Both still in range of their
+v0.2 severity examples. Interpretation: v0.3's tighter Major/Minor
+examples (added in v0.2) anchor the gradient more conservatively, so
+the reviewer reserves Critical more strictly. The seed targets stay
+exact at 5/5.
+
+## Metrics — R3
+
+- **Output format compliance:** PASS — no Recommendations section
+  produced, Advisory finding correctly under Findings.
+- **Discovery:** 5/5 seeds (100%).
+- **Severity calibration on seeds:** 5/5 exact (same as R2).
+- **False positives:** 0/8.
+- **Cost:** 1 dispatch Opus 4.7, ~52k tokens, ~47s.
+
+## Conclusion — v0.3
+
+The output-format ambiguity is resolved. All three reviewer prompts now
+have a single output namespace (Findings) and an explicit inverse rule
+against producing a Recommendations section. Empirical verification on
+the code reviewer confirms compliance and preserves v0.2's severity
+calibration on the seed set.
+
+The judicial and generic reviewers received the same edit pattern and
+are expected to behave consistently. The judicial v0.2 → v0.3 ambiguity
+in particular (Round 2 produced R2-PRC008 under `### Achados` then
+duplicated it under `### Recomendações` as a bullet) is now structurally
+impossible.
+
+Note for v0.4: minor downgrades on lateral findings (R3-PRC003,
+R3-PRC007) suggest the Major/Minor boundary could benefit from one
+additional anchoring example. Not urgent; calibration is within
+acceptable bounds.
