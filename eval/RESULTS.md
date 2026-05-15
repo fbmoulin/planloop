@@ -104,3 +104,86 @@ all eval criteria. The skill correctly:
 Mild calibration issues (1 severity-down, 1 severity-up) are
 documented as candidate prompt edits for v0.2 but do not affect the
 correctness of the workflow.
+
+---
+
+# Round 2 — calibration check on `code-plan-reviewer@v0.2`
+
+Re-ran the same seeded plan against the calibrated reviewer prompt.
+Goal: verify that v0.2's two added rules (spec-contract violations →
+Critical; polish-only language → Advisory) correct the two mild
+miscalibrations observed in Round 1.
+
+## v0.1 vs v0.2 severity comparison (same plan, same seeds)
+
+| Seed | v0.1 (Round 1) | v0.2 (Round 2) | Δ | Expected per SEEDS.md |
+|---|---|---|---|---|
+| C1 — YAML missing | Critical | Critical | — | Critical ✓ |
+| C2 — exit 99 contradicts spec | Major | **Critical** | ↑ | Critical ✓ |
+| Related — exit 2 mapping incomplete | Major | **Critical** | ↑ | (bonus contract finding) |
+| m1 (TDD) — tests after impl | Major | Major | — | Major or Minor ✓ |
+| m1 (vague) — adequate coverage | Minor | Minor | — | Major or Minor ✓ |
+| M1 — `--verbose` scope creep | Minor | Minor | — | Major or Minor ✓ |
+| A1 — Task 7 polish-only | Minor | **Advisory** | ↓ | Advisory or absent ✓ |
+| Bonus — NFR verification gap | Minor | **Major** | ↑ | (legitimate uplift) |
+
+Distribution shift:
+
+|  | Critical | Major | Minor | Advisory | Total |
+|---|---|---|---|---|---|
+| v0.1 Round 1 | 1 | 3 | 4 | 0 | 8 |
+| v0.2 Round 2 | 3 | 2 | 2 | 1 | 8 |
+
+Both calibration targets hit. All 5 seeds now classify at the
+expected severity exactly.
+
+## Side effect: framing transfer
+
+The v0.2 "spec contract is the contract" framing propagated beyond the
+single target seed. Two additional findings whose underlying nature is
+also contract-violation were promoted:
+
+- R2-PRC003 (exit-2 mapping incomplete) → Major in v0.1, **Critical**
+  in v0.2. This is correct: it is the same contract surface as C2.
+- R2-PRC005 (NFR no-network silently violatable via `$ref`) → Minor in
+  v0.1, **Major** in v0.2. This is correct: the spec's no-network MUST
+  is also a contract, and the lack of any verification means it can be
+  silently breached.
+
+Conclusion: severity calibration on one rule reshapes the reviewer's
+mental frame globally, not just on the target case. This is the
+intended outcome of severity examples in prompts. Document the effect
+for future calibration cycles.
+
+## v0.3 candidate: output format ambiguity
+
+In Round 2 the reviewer placed the Advisory finding (R2-PRC008) under
+the `### Recommendations` heading while still numbering it as a Finding
+block with full structure. The output template treats Recommendations
+as a separate bullet section for brief advisory items, distinct from
+numbered Findings. The reviewer's behavior is not wrong (the item is
+correctly Advisory and the slot is for advisory content), but the
+boundary between "numbered Finding with severity Advisory" and
+"unnumbered Recommendations bullet" is ambiguous.
+
+Suggested v0.3 prompt clarification: state explicitly that Advisory
+items either appear as numbered Findings under `### Findings` with
+severity Advisory, OR as brief bullets under `### Recommendations`,
+but not as numbered Findings under `### Recommendations`. Pick one
+convention.
+
+## Metrics — Round 2
+
+- **Discovery rate:** 5/5 seeds (100%, unchanged from R1).
+- **False positives:** 0/8 (unchanged from R1).
+- **Severity calibration:** 5/5 seeds at expected severity (R1: 3/5).
+- **Sycophancy check:** PASS.
+- **Cost:** 1 subagent dispatch, ~52k tokens, ~46s.
+
+## Conclusion — v0.2
+
+The two targeted calibration edits achieved their goal. Spec-contract
+violations now reliably classify as Critical; polish-only language now
+reliably classifies as Advisory. As a side effect, the reviewer's
+overall framing is sharper around contract semantics. No regressions
+detected. Recommend installing v0.2 as the default.

@@ -1,6 +1,6 @@
 # Code Plan Reviewer Prompt
 
-**Template version:** v0.1
+**Template version:** v0.2
 **Use for:** software implementation plans, refactors, infrastructure changes, AWS CDK changes, monorepo work, migration plans.
 
 ---
@@ -54,13 +54,13 @@ If the Prior Plan Review Log closes a finding as Resolved or No Plan Change, do 
 
 ## Severity guide
 
-Critical: Missing requirements, contradictions, unsafe implementation paths, tasks that cannot be executed as written, data-loss risks, security issues.
+Critical: Missing requirements, contradictions, unsafe implementation paths, tasks that cannot be executed as written, data-loss risks, security issues. ALSO: any spec-contract violation — when the plan instructs behavior that disagrees with the spec's declared exit codes, return shapes, public API surface, error mapping, or other observable contract. A plan that ships a tool whose exit codes do not match the spec's exit codes is Critical, not Major, even if the surface error message looks like a small thing. The contract is the contract.
 
-Major: Issues likely to cause rework, implementation confusion, or incomplete behavior. Significant downstream cost if not addressed before execution.
+Major: Issues likely to cause rework, implementation confusion, or incomplete behavior. Significant downstream cost if not addressed before execution. Examples: incomplete error mapping for documented failure modes, missing test cases for a stated requirement, TDD ordering violations, signatures that disagree between tasks but resolvable.
 
-Minor: Issues worth addressing or documenting, but unlikely to derail implementation. Local fixes.
+Minor: Issues worth addressing or documenting, but unlikely to derail implementation. Local fixes. Examples: vague acceptance criteria where the cases are at least enumerated, minor scope creep that is small and reversible, missing dependency pinning where the dependency is named.
 
-Advisory: Non-blocking suggestions. Improvements that would be nice but the plan works without them.
+Advisory: Non-blocking suggestions. Improvements that would be nice but the plan works without them. SPECIFIC RULE: a task whose entire body is subjective improvement language ("polish", "improve", "make clearer", "consider adding context") without naming a specific failure mode the implementer would hit is at most Advisory — flag it as Advisory or do not flag it at all, do not promote it to Minor. The test is whether you can name the concrete bug, regression, or misbehavior that arises if the task is skipped. If you cannot, it is Advisory.
 
 ## Output format
 
@@ -71,7 +71,7 @@ Produce this exact structure. Do not add preamble. Do not add closing remarks.
 Status: Approved | Issues Found
 
 Round: [ROUND_NUMBER]
-Reviewer prompt: code-plan-reviewer@v0.1
+Reviewer prompt: code-plan-reviewer@v0.2
 
 ### Findings
 
