@@ -207,35 +207,100 @@ Recommend stopping when:
 
 ## Human partner interaction templates
 
-After findings are returned, present:
+After findings are returned, present an overview ordered by severity, then walk findings one at a time using the **didactic disposition standard** below.
+
+### Overview format
 
 ```
 Review Round N found [count] issue(s):
 
-- [ ] R<N>-PRC001 [Critical] [short title]
-- [ ] R<N>-PRC002 [Major] [short title]
-- [ ] R<N>-PRC003 [Advisory] [short title]
-
-Would you like to walk through them in order of severity?
+- [ ] R<N>-PRC001 [Critical] [short title in plain language]
+- [ ] R<N>-PRC002 [Major]    [short title in plain language]
+- [ ] R<N>-PRC003 [Advisory] [short title in plain language]
 ```
 
-For each finding, after presenting concern and why-it-matters:
+### Didactic disposition standard (mandatory for every finding)
+
+Each finding presentation MUST have four parts in this order. The reviewer subagent produces technical output; you (the orchestrator) translate it into elucidative prose for the human. Inspired by the ADR (Architecture Decision Record) pattern used at Microsoft, AWS, and the adr.github.io community.
+
+**Part 1 — Plain-language explanation.** Rewrite `reviewer_concern` in elucidative prose. Avoid jargon when possible; when unavoidable, explain it in 5-10 words. The reader may be a senior engineer or a non-engineer stakeholder — both must understand. Use analogy when it helps clarity.
+
+**Part 2 — Practical consequence.** Rewrite `why_it_matters` in terms of concrete what-happens: hours of rework, production bug, regulatory exposure, customer impact. Don't write "violates contract"; write "implementer discovers mid-Task-4 and rebuilds the migration, ~1h lost". Anchor in observable cost.
+
+**Part 3 — Researched options (minimum 2, maximum 4).** Before presenting options, follow the **Research-before-recommend rule** (next section). Each option includes:
+- Short name
+- One-sentence description
+- Main trade-off in plain language
+- Don't invent options ad-hoc — base them on real practice, citing sources when relevant
+
+**Part 4 — Recommendation with justification.** You MUST explicitly recommend ONE of the options as best-fit for this case. Mark it `(RECOMMENDED)`. Provide 1-2 sentences of justification anchored in: (a) simplicity (smallest viable solution), (b) alignment with decisions already made in the plan, or (c) fit with the project context the user has shared. Never present options without recommending — leaving the human to figure out the choice unaided defeats the purpose of having a reviewer.
+
+### AskUserQuestion formatting
+
+Each option label MUST follow the pattern:
+- The RECOMMENDED option comes FIRST with `(Recommended)` suffix in the label
+- Then alternatives in order of decreasing fit
+- Then `No Plan Change (defer with explicit rationale)`
+- Then `Reject (I re-propose)` as escape hatch
+
+The description field of each option carries the trade-off (one sentence). The recommendation justification goes in the chat text just before the AskUserQuestion call, not buried inside an option.
+
+### Example: PRC007 (encryption at rest) — didactic format
+
+> **R1-PRC007 [Major] — Criptografia em repouso (SPEC §9) silently-violatable**
+>
+> **O que está faltando** (Parte 1): O SPEC §9 diz que dados sensíveis em repouso (banco SQLite + PDFs baixados) devem ser criptografados, com a chave fora do código. O plano não menciona criptografia em lugar nenhum — usa `better-sqlite3` puro e gravação direta de PDFs em `./data/downloads/`. É como instalar um cofre no escritório mas deixar a porta aberta.
+>
+> **Por que importa** (Parte 2): Em ambiente de gabinete judicial com dados sigilosos reais, isso vira incidente material — se o laptop for roubado ou um backup leakar, autos sigilosos vão a público. CNJ 396/2021 (Política de Segurança Cibernética do Judiciário) trata isso como obrigação institucional. Sem essa correção, o plano entrega Fase 1 verde mas com dados sigilosos em texto claro no disco.
+>
+> **Opções pesquisadas** (Parte 3): Pesquisei estado da arte 2026 em SQLite encryption para Node.js + CNJ 396/2021:
+> - **Opção A**: SQLCipher técnico forte via `better-sqlite3-multiple-ciphers` (drop-in, +1 dep, key em env)
+> - **Opção B**: Delegação ao SO (FileVault/LUKS/BitLocker) + ADR documentando
+> - **Opção C**: Defer para Fase 4 (restringe uso real)
+> - **Opção D combinada**: SQLCipher pro SQLite + ADR + script de check pros PDFs
+>
+> **Recomendação** (Parte 4): **Opção D combinada (RECOMENDADA)**. Justificativa: B sozinha quebra silenciosamente em backup/VM/container (false security); A sozinha não cobre PDFs em filesystem; C restringe demais o uso real do gabinete. D combina SQLCipher (defesa em profundidade na app) + script de check (defesa no FS) + ADR (decisão documentada). Custo extra é pequeno (~30min de plan edit + 1 dep + 1 script) e o ganho de segurança é estrutural, alinhando com CNJ 396/2021 sem ambiguidade.
+
+After the human responds with their choice, propose the concrete plan changes and confirm:
 
 ```
-What are your thoughts on this? Do you see it the same way, or is there context I'm missing?
+Approve this disposition? (the RECOMMENDED option is pre-selected, but feel free to choose differently)
 ```
 
-After the human responds, propose a concrete disposition, then:
+Mark the finding closed only after explicit approval.
 
-```
-Approve this disposition?
-- Resolved (change the plan as proposed)
-- No Plan Change (record the rationale as proposed)
-- Reject (re-propose)
-- Defer (leave Open, revisit next round)
-```
+## Research-before-recommend rule
 
-Mark the checkbox only after explicit approval.
+When a finding requires non-trivial technical judgment, you MUST research before presenting options. Don't invent alternatives from partial knowledge.
+
+**Criteria for "non-trivial":**
+- Framework/library choice not obvious from context
+- Security/performance/UX trade-off with multiple defensible positions
+- Architectural pattern with multiple schools (e.g., transaction patterns, encryption, error handling)
+- Standard or API in flux (e.g., SQLite encryption ecosystem in 2026)
+- Anything where saying "I think the best is X" without evidence would be misleading
+
+**Research methods (in order of preference):**
+1. WebSearch for current best practices, with year qualifier (e.g., "2026")
+2. Documentation reads for the specific library/framework
+3. GitHub repositories of canonical implementations
+4. Recent ADRs from other projects on the same topic (when public)
+
+**Cite sources** in the recommendation justification when applicable. The human can verify your recommendation; without sources, recommendation is opinion.
+
+**Skip research when** the finding is trivial: typo, missing field, vague acceptance criterion, dead code, renaming, formatting. Direct proposal is fine.
+
+## Anti-overengineering rule
+
+When choosing between resolutions, prefer the simplest viable solution. Concretely:
+
+- **Prefer local edits over new abstractions.** If a 3-line change resolves the issue, don't propose a helper function.
+- **Prefer existing patterns over new ones.** If the codebase has a pattern for X, use it before introducing pattern Y.
+- **Prefer 80% solution + documented gap over 100% solution + sprawl.** If the simple version covers the spec MUST and the complex version adds robustness for hypothetical scenarios, recommend simple and note the 20%.
+- **Account for reading cost, not just writing cost.** A clever solution that takes 10min to understand later costs more than a verbose one that takes 1min.
+- **Flag when you are tempted to over-engineer.** If your initial proposal involves creating ≥2 new files, new types, or new abstractions, ask yourself: is the user's actual problem big enough to warrant this? Default to no.
+
+Apply this anti-overengineering filter to YOUR recommendation in Part 4. The recommended option should be the smallest one that genuinely resolves the finding — not the most architecturally pure one.
 
 ## Hard gate via validator
 
