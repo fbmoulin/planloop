@@ -64,6 +64,8 @@ Or, more loosely (the skill description is calibrated to trigger on these too):
 
 The skill will infer the domain, confirm the reviewer prompt with you, dispatch a fresh subagent, collect findings, walk through them with you one at a time, update the plan only on your explicit approval, and run the validator as the hard gate.
 
+**See [`USAGE.md`](USAGE.md) for the complete walkthrough** — domain selection, finding disposition (Resolved / No Plan Change / Defer), severity semantics, diverse-critics option, manual validator runs, and a troubleshooting table.
+
 ## Manual validation
 
 After any review round, you can run the validator yourself:
