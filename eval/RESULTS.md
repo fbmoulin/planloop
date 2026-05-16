@@ -283,3 +283,90 @@ Note for v0.4: minor downgrades on lateral findings (R3-PRC003,
 R3-PRC007) suggest the Major/Minor boundary could benefit from one
 additional anchoring example. Not urgent; calibration is within
 acceptable bounds.
+
+---
+
+# Round 4 — `code-plan-reviewer@v0.4` (silently-violatable MUST anchor)
+
+Verification round after applying the v0.4 Major-tier anchor: "a spec
+MUST without any verification step in the plan when the MUST can be
+silently violated at runtime without test failure — silently-violatable
+MUSTs are Major even when they look like non-functional polish."
+
+## R4 vs prior rounds on jsoncheck seeded plan
+
+| Seed | v0.1 R1 | v0.2 R2 | v0.3 R3 | v0.4 R4 | Expected |
+|---|---|---|---|---|---|
+| C1 (YAML missing) | Critical | Critical | Critical | Critical | Critical ✓ |
+| C2 (exit 99 contradiction) | Major | Critical | Critical | Critical | Critical ✓ |
+| Exit-2 mapping incomplete | Major | Critical | Major | **Critical** | range; v0.4 re-promoted via contract framing |
+| TDD ordering | Major | Major | Major | Major | Major ✓ |
+| m1 (vague coverage) | Minor | Minor | Minor | Minor | Minor ✓ |
+| M1 (--verbose scope creep) | Minor | Minor | Minor | Minor | Minor ✓ |
+| NFR verification gap | Minor | Major | Minor | **Major** | ✓ **FIXED** (v0.4 target) |
+| A1 (polish) | Minor | Advisory | Advisory | Advisory | Advisory ✓ |
+| NEW: 3-module layout vs single-file MUST | — | — | — | **Major** | bonus catch from v0.4 lens |
+
+Distribution shift:
+
+|   | Critical | Major | Minor | Advisory | Total |
+|---|---|---|---|---|---|
+| v0.1 R1 | 1 | 3 | 4 | 0 | 8 |
+| v0.2 R2 | 3 | 2 | 2 | 1 | 8 |
+| v0.3 R3 | 2 | 2 | 3 | 1 | 8 |
+| v0.4 R4 | 3 | 3 | 2 | 1 | 9 |
+
+## Key wins
+
+1. **NFR verification gap restored to Major** (was Minor in v0.3 R3,
+   matching v0.2 R2). The reviewer explicitly cited the v0.4 rule:
+   "Per v0.4 calibration, a spec MUST without any verification step
+   where the constraint can be silently violated at runtime without
+   test failure is Major. Re-flagged from R1-PRC008; no plan change
+   applied."
+
+2. **NEW bonus finding R4-PRC006: single-file MUST vs 3-module layout
+   contradiction.** The same "silently-violatable MUST" lens that
+   v0.4 introduced led the reviewer to spot a Spec-vs-Plan contradiction
+   in the Approach section that *no prior round had caught*. The spec
+   says "single-file CLI under 200 LOC" but the plan creates
+   `jsoncheck/{cli,loader,engine}.py` — the reviewer surfaced the
+   inconsistency and noted "Implementer cannot tell whether to ship
+   one file or three." Excellent emergent behavior from the new rule.
+
+3. **A1 explicitly self-corrected**: "Re-flagged from R1-PRC007 with
+   severity corrected from Minor to Advisory." The reviewer is now
+   aware of the prior log and applies v0.4 rules retroactively.
+
+4. **Exit-2 mapping re-promoted to Critical**: the v0.4 framing
+   ("contract mismatch on exit codes") pulled it back from Major.
+   Defensible — both v0.2 (Critical) and v0.4 (Critical) are within
+   spec-contract framing.
+
+## Metrics — R4
+
+- **Discovery:** 5/5 seeds (100%)
+- **Severity calibration on seeds:** 5/5 exact
+- **False positives:** 0/9
+- **Bonus catches:** 1 new finding (R4-PRC006) revealed by the new lens
+- **Output format compliance:** PASS — no Recommendations section
+- **Cost:** 1 dispatch Opus 4.7, ~48k tokens, ~29s
+
+## Conclusion — v0.4 code
+
+The "silently-violatable MUST" anchor achieved both targets:
+
+- recalibrated NFR verification from Minor back to Major (the
+  oscillation between v0.2 Major and v0.3 Minor stabilized)
+- as side effect, the same lens revealed a Spec-vs-Plan contradiction
+  (single-file vs 3-module layout) that earlier rounds missed
+
+This is the second time we observe that a focused severity rule
+propagates to surface new findings beyond its target (cf. v0.2's
+"contract is the contract" lens promoting NFR and exit-2 mapping).
+Severity prompts are not just calibration — they reshape the
+reviewer's attention map.
+
+No regressions on the seed targets. Calibration is now stable across
+v0.2/v0.3/v0.4 on the core seeds, with deliberate improvement on the
+NFR boundary in v0.4.

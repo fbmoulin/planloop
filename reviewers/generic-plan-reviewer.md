@@ -1,6 +1,6 @@
 # Generic Plan Reviewer Prompt
 
-**Template version:** v0.3
+**Template version:** v0.4
 **Use for:** product specs, content strategies, research plans, marketing plans, and any plan that is neither clearly software nor clearly judicial.
 
 ---
@@ -46,17 +46,19 @@ Stakeholder and approval gaps:
 
 Only flag issues that would cause real problems during execution. Vague aspiration is an issue. Missing approvals where they matter is an issue. Style preferences and "could be more detailed" comments are not.
 
+Consolidation rule: when several findings share a root cause (for example, multiple tasks depending on the same external approval, or several criteria sharing the same vagueness pattern), prefer one consolidated finding that names the root cause and enumerates the affected tasks in its Location field, over multiple parallel findings. The reader benefits from seeing the systemic issue once with all the consequences listed, rather than reading the same diagnosis repeated under different headings. Split only when the consequences are genuinely independent.
+
 If the Prior Plan Review Log closes a finding, do not repeat it without new evidence.
 
 ## Severity guide
 
-Critical: Missing required content, contradictions that block execution, unsafe paths, unfeasible commitments.
+Critical: Missing required content, contradictions that block execution, unsafe paths, unfeasible commitments, ALSO: a required approval is missing from the plan AND the named approver has veto power that can block release, trigger regulatory action (fines, sanctions, license review), or invalidate the work product (e.g. legal/compliance sign-off, clinical/medical review for therapeutic claims, brand committee for restricted channels, financial gate above budget cap). Missing approval is Major in general, but Critical when the absent approver can stop or unwind the entire effort.
 
-Major: Issues likely to cause rework or significant downstream cost.
+Major: Issues likely to cause rework or significant downstream cost. Examples: required approval missing where the approver causes rework but cannot fully block; declared stakeholder dependencies (vendors, partners) not acknowledged; budget or timeline math that does not close but is fixable; observable metric in the brief absent from the plan's success criteria.
 
-Minor: Issues worth addressing but not blocking.
+Minor: Issues worth addressing but not blocking. Examples: owners named by function rather than by person; secondary metric vague; small numerical inconsistency in declared durations.
 
-Advisory: Non-blocking suggestions.
+Advisory: Non-blocking suggestions. SPECIFIC RULE: a task whose entire body is subjective improvement language ("polish", "improve", "make clearer", "consider adding context", "tighten the narrative") without naming a specific failure mode the executor would hit is at most Advisory — flag as Advisory or do not flag at all, do not promote to Minor. The test is whether you can name the concrete failure, regression, or measurable miss that arises if the task is skipped. If you cannot, it is Advisory.
 
 ## Output format
 
@@ -67,7 +69,7 @@ Produce this exact structure. Do not add preamble. Do NOT add a Recommendations 
 Status: Approved | Issues Found
 
 Round: [ROUND_NUMBER]
-Reviewer prompt: generic-plan-reviewer@v0.3
+Reviewer prompt: generic-plan-reviewer@v0.4
 
 ### Findings
 

@@ -144,3 +144,125 @@ de severidade está saudável e nenhum finding é descartável.
 - code-plan-reviewer@v0.3:     5/5 seeds, 0 FP, format clean
 - judicial-plan-reviewer@v0.3: 5/5 seeds, 0 FP, format clean
 - generic-plan-reviewer@v0.3:  5/5 seeds, 0 FP, format clean
+
+---
+
+# Round 2 — `generic-plan-reviewer@v0.4` (consolidation + veto-power + polish rule)
+
+Rodada de verificação após aplicar as três edições v0.4:
+
+1. **Seção Calibration:** adicionada Consolidation rule — "when several
+   findings share a root cause, prefer one consolidated finding with
+   enumerated Location over multiple parallel findings".
+
+2. **Severity Guide Critical:** adicionado anchor "missing approval
+   where the approver has veto power (regulatory body, financial gate,
+   brand committee)" com lista explícita (legal/compliance,
+   clinical/medical for therapeutic claims, brand committee,
+   financial gate above budget cap).
+
+3. **Severity Guide Advisory:** adicionada REGRA ESPECÍFICA polish-only
+   espelhando code/judicial v0.2.
+
+## R2 v0.4 vs R1 v0.3 no plan-launch-seeded.md
+
+| Seed | Esperado | R1 v0.3 | R2 v0.4 | Δ |
+|---|---|---|---|---|
+| GC1 (budget excede teto) | Critical | R1-PRC001 Critical | R2-PRC002 Critical | — |
+| GC2 (cronograma legal inviável) | Critical | R1-PRC002 + R1-PRC003 (split Critical) | **consolidado em R2-PRC001 Critical** | ✓ CONSOLIDATED |
+| GM1 (aprovações ausentes) | Major | R1-PRC004 Critical (apenas Clínico) | **consolidado em R2-PRC001 Critical** (todos 4 aprovadores) | ✓ CONSOLIDATED + veto-power anchor |
+| GM2 (WCAG acessibilidade) | Major | R1-PRC005 Major | R2-PRC004 Major | — |
+| Gm1 (critérios vagos) | Minor | R1-PRC006 Major + R1-PRC014 Minor (split) | **consolidado em R2-PRC003 Major** | ✓ CONSOLIDATED |
+| GA1 (polish bait) | Advisory/absent | absent | **R2-PRC013 Advisory** | ↑ flagged per REGRA ESPECÍFICA |
+
+Distribuição:
+
+|   | Critical | Major | Minor | Advisory | Total |
+|---|---|---|---|---|---|
+| v0.3 R1 | 4 | 8 | 2 | 2 | **16** |
+| v0.4 R2 | 2 | 7 | 1 | 3 | **13** |
+
+**Redução de 16 → 13 findings (-19%) sem perda de cobertura dos seeds.**
+
+## Key wins
+
+1. **Consolidation funcionou no caso mais óbvio.** R2-PRC001 ("Aprovações
+   com poder de veto ausentes do plano") consolidou três findings v0.3
+   (R1-PRC002 TikTok+Marca, R1-PRC003 Legal, R1-PRC004 Clínico) em UM
+   finding sistêmico com Location enumerando 7 tasks × 4 aprovadores
+   distintos. O reader vê a diagnose única ("ALL approvers missing =
+   single root cause") em vez de 3 sintomas do mesmo problema. Mais
+   útil pragmaticamente e mais defensável tecnicamente.
+
+2. **Veto-power anchor codificou padrão antes ad-hoc.** R2-PRC001 cita
+   literalmente "aprovadores com poder de veto" e justifica Critical
+   por causa do risco regulatório explícito (Anvisa, CFP/CRP, Comitê
+   de Marca, CFO travando despesas). Em v0.3 essa classificação
+   Critical aconteceu por boa inferência do modelo; em v0.4 é regra.
+
+3. **REGRA ESPECÍFICA polish-only fez o reviewer DOCUMENTAR a tarefa
+   GA1 como Advisory** em vez de omitir silenciosamente. Em v0.3 R1 a
+   Task 7 "polir o deck" foi absent. Em v0.4 R2 ela é R2-PRC013
+   Advisory com Concern citando "linguagem subjetiva sem nomear falha
+   concreta" — exatamente o teste da regra. Mais transparente para a
+   sponsor.
+
+4. **Gm1 também consolidado**: R1 v0.3 tinha 2 findings sobre
+   critérios vagos (PRC006 Major sobre descolamento das métricas +
+   PRC014 Minor sobre "bom engajamento"). R2 v0.4 fundiu em PRC003
+   Major com Location enumerando Acceptance + Tasks 2, 4, 5, 6.
+
+## Achados preservados (não consolidados) — todos legítimos
+
+| ID | Severity | Tópico | Status |
+|---|---|---|---|
+| R2-PRC005 | Major | capacidade comercial | preservado de R1 |
+| R2-PRC006 | Major | Meta canal ignorado | preservado |
+| R2-PRC007 | Major | evento sub-dimensionado | preservado |
+| R2-PRC008 | Major | LGPD opt-in | preservado |
+| R2-PRC009 | Major | gestão de risco / rollback | preservado |
+| R2-PRC010 | Minor | owners por função | preservado |
+| R2-PRC011 | Advisory | janela não fecha matematicamente | preservado |
+| R2-PRC012 | Advisory | aprovação sponsor não registrada | preservado |
+
+R1-PRC009 (landing page cronograma incompatível com Webflow + jurídico)
+foi consolidado em R2-PRC001 (que enumera Task 1 sob "Legal + LGPD") —
+consolidação legítima.
+
+## Métricas — R2 v0.4
+
+- Discovery: 5/5 seeds (100%, mesmo de R1; consolidation não perdeu cobertura)
+- Falsos positivos: 0/13 (R1 era 0/16)
+- Volume reduzido: 16 → 13 findings
+- Output format: PASS (sem Recommendations, Advisory sob Findings)
+- Hard gate: não rodado (mesmo plano já tem log v0.3; v0.4 só verifica reviewer behavior)
+- Custo: 1 dispatch Opus 4.7, ~52k tokens, ~45s
+
+## Conclusão — v0.4 generic
+
+As três edições atingiram seus alvos sem regressões:
+
+- **Consolidation rule**: -3 findings consolidando aprovações; -1
+  finding consolidando critérios vagos. Total -3 line items
+  preservando informação completa via Location enumeradas.
+- **Veto-power anchor**: codificou o padrão de classificar Critical
+  por risco regulatório (Anvisa/CFP/CRP) que antes dependia de
+  inferência ad-hoc.
+- **REGRA ESPECÍFICA polish-only**: transformou silencio sobre GA1
+  em documentação Advisory explícita.
+
+O reviewer agora produz output mais conciso (13 vs 16 findings)
+sem perder cobertura e com framing técnico mais consistente. Pronto
+para uso em planos reais.
+
+## Triangle v0.4 final
+
+| Reviewer | v0.3 | v0.4 | Discovery | False positives | Output format |
+|---|---|---|---|---|---|
+| code-plan-reviewer | ✓ | ✓ | 5/5 (+1 bonus catch novo) | 0/9 | clean |
+| judicial-plan-reviewer | ✓ | ✓ | 5/5 (JC2 regression fixed) | 0/9 | clean |
+| generic-plan-reviewer | ✓ | ✓ | 5/5 (com consolidation) | 0/13 | clean |
+
+`plan-review-cycle@v0.4` validado nos 3 domínios. Próximo passo
+natural: aplicar em plans reais e deixar o uso real produzir as
+próximas calibrações (v0.5+).

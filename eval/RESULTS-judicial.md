@@ -129,3 +129,97 @@ As duas edições-alvo funcionaram:
 A regressão em JC2 (Critical → Major) é efeito colateral não-monotônico: o reviewer escolheu um framing técnico melhor que rebaixa a severidade. Compensação é fácil em v0.3 (promover "omissão de tese defensiva" ao Severity Guide Critical).
 
 Discovery rate: 4/5 → 5/5. Falsos positivos: 0 → 0. Calibração exata: 4/5 → 4/5 (alvo deslocado: ganhou Jm1, perdeu JC2). Recomendo instalar v0.2 como default e registrar v0.3 candidates no roadmap.
+
+---
+
+# Round 3 — `judicial-plan-reviewer@v0.4` (JC2 regression fix + style consistency)
+
+Rodada de verificação após aplicar as duas edições v0.4:
+
+1. **Severity Guide Critical:** adicionada regra explícita "omissão de
+   enfrentamento de tese defensiva expressamente articulada pela parte
+   (CPC art. 489 §1º IV — incluindo, por exemplo, a tese de 'mero
+   aborrecimento' em pedido de dano moral, ou a tese de 'boa-fé do
+   credor' em repetição de indébito; a regra vale ainda que o plano
+   alcance a mesma conclusão por outro caminho)". Promoveu a regra
+   que antes vivia apenas na seção Calibração para o Severity Guide.
+
+2. **Seção Calibração:** adicionada nota sobre consistência de
+   estilo registrado entre rodadas — preferências do magistrado
+   (prosa contínua, ausência de subdivisões, ausência de travessões)
+   devem ser sinalizadas com a mesma consistência através das
+   rodadas, não desprivilegiadas quando achados de severidade maior
+   ocupam a rodada.
+
+## R3 v0.4 vs rodadas anteriores no plan-sentenca-seeded.md
+
+| Seed | v0.1 R1 | v0.2 R2 | v0.4 R3 | Δ vs R2 | Expected |
+|---|---|---|---|---|---|
+| JC1 (Tema 929) | Critical | Critical | Critical | — | Critical ✓ |
+| JC2 (mero aborrecimento) | Critical | **Major** (regressão) | **Critical** | ↑ **FIXED** | Critical ✓ |
+| JM1 (honorários ausentes) | Critical | Critical | Critical | — | Major (in range) |
+| Jm1 (dispositivo contaminado) | absent | Critical | Critical | — | Critical (v0.2 design) ✓ |
+| JA1 (polish "Acabamento") | absent | Advisory | Advisory | — | Advisory ✓ |
+
+Distribuição:
+
+|   | Critical | Major | Minor | Advisory | Total |
+|---|---|---|---|---|---|
+| v0.1 R1 | 2 | 3 | 2 | 0 | 7 |
+| v0.2 R2 | 3 | 3 | 1 | 1 | 8 |
+| v0.4 R3 | 4 | 3 | 1 | 1 | 9 |
+
+## Key wins
+
+1. **JC2 restaurado para Critical.** A regressão lateral observada em
+   v0.2 R2 foi corrigida cirurgicamente. O reviewer cita o texto da
+   nova regra v0.4: "Omissão de enfrentamento de tese defensiva
+   expressamente articulada pela parte viola CPC art. 489 §1º, IV, e
+   gera nulidade." A finding foi também enriquecida com nota de
+   contradição com a posição declarada da magistrada no Contexto dos
+   autos.
+
+2. **R3-PRC009 (subdivisões da fundamentação) re-flagged como Minor**
+   com nota explícita: "Re-sinalizado por consistência através das
+   rodadas, conforme calibração v0.4 (item d)." A regra de
+   consistência de estilo foi internalizada — o reviewer agora se
+   refere à própria calibração quando reinclui um achado de estilo.
+
+3. **Bonus finding R3-PRC005 (Major): ausência de juros, correção
+   monetária e prazo de cumprimento.** Achado legítimo não-seeded que
+   cita inclusive a unificação pela Lei 14.905/2024 e o Tema 1.061/STJ.
+   O reviewer está ativando referências legislativas e jurisprudenciais
+   recentes — sinal de raciocínio jurídico atualizado, não calibração
+   v0.4 específica.
+
+4. **JA1 mantém Advisory** com nota "Sinalizado por consistência
+   metodológica conforme calibração v0.4 (item c)" — a REGRA
+   ESPECÍFICA polish-only continua aplicada corretamente.
+
+## Métricas — R3 v0.4
+
+- Discovery: 5/5 seeds (100%, mesmo de R2)
+- Severity exact: 5/5 (R2 era 4/5; JC2 corrigido)
+- Falsos positivos: 0/9
+- Bonus catches: 4 (distinguishing Tema 618, arts. 39/51 CDC, prazo
+  recursal, juros+correção+prazo cumprimento) — todos legítimos
+- Output format compliance: PASS — sem Recomendações, Advisory sob
+  Achados com severidade explícita
+- Custo: 1 dispatch Opus 4.7, ~49k tokens, ~35s
+
+## Conclusão — v0.4 judicial
+
+A regressão JC2 (Critical → Major em v0.2 R2) foi corrigida
+exatamente como previsto pelo v0.4 candidate: promover a regra
+"omissão de tese defensiva expressamente articulada" do bloco
+Calibração para o Severity Guide Critical. Side effect: a regra
+agora dispara mesmo quando o reviewer escolhe enquadramento
+técnico alternativo (CPC §1º III conceito indeterminado), porque a
+combinação dos dois enquadramentos compõe Critical no novo Severity
+Guide.
+
+A nota de consistência de estilo também produziu o efeito desejado
+— a R3 não perdeu o achado sobre subdivisões da fundamentação que
+R2 v0.2 havia abandonado.
+
+Calibração agora estável nos 5 seeds com 5/5 exatos. Sem regressões.

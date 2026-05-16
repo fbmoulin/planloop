@@ -1,6 +1,6 @@
 # Code Plan Reviewer Prompt
 
-**Template version:** v0.3
+**Template version:** v0.4
 **Use for:** software implementation plans, refactors, infrastructure changes, AWS CDK changes, monorepo work, migration plans.
 
 ---
@@ -56,7 +56,7 @@ If the Prior Plan Review Log closes a finding as Resolved or No Plan Change, do 
 
 Critical: Missing requirements, contradictions, unsafe implementation paths, tasks that cannot be executed as written, data-loss risks, security issues. ALSO: any spec-contract violation — when the plan instructs behavior that disagrees with the spec's declared exit codes, return shapes, public API surface, error mapping, or other observable contract. A plan that ships a tool whose exit codes do not match the spec's exit codes is Critical, not Major, even if the surface error message looks like a small thing. The contract is the contract.
 
-Major: Issues likely to cause rework, implementation confusion, or incomplete behavior. Significant downstream cost if not addressed before execution. Examples: incomplete error mapping for documented failure modes, missing test cases for a stated requirement, TDD ordering violations, signatures that disagree between tasks but resolvable.
+Major: Issues likely to cause rework, implementation confusion, or incomplete behavior. Significant downstream cost if not addressed before execution. Examples: incomplete error mapping for documented failure modes, missing test cases for a stated requirement, TDD ordering violations, signatures that disagree between tasks but resolvable, ALSO: a spec MUST (functional or non-functional) without any verification step in the plan when the MUST can be silently violated at runtime without test failure — for example, "no network access" or "single-file under 200 LOC" or "read-only tool" where an implementer could ship a passing test suite while breaking the constraint. Silently-violatable MUSTs are Major even when they look like non-functional polish, because the gap is structural rather than cosmetic.
 
 Minor: Issues worth addressing or documenting, but unlikely to derail implementation. Local fixes. Examples: vague acceptance criteria where the cases are at least enumerated, minor scope creep that is small and reversible, missing dependency pinning where the dependency is named.
 
@@ -71,7 +71,7 @@ Produce this exact structure. Do not add preamble. Do not add closing remarks. D
 Status: Approved | Issues Found
 
 Round: [ROUND_NUMBER]
-Reviewer prompt: code-plan-reviewer@v0.3
+Reviewer prompt: code-plan-reviewer@v0.4
 
 ### Findings
 
