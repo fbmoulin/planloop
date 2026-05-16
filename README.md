@@ -64,7 +64,16 @@ Or, more loosely (the skill description is calibrated to trigger on these too):
 
 The skill will infer the domain, confirm the reviewer prompt with you, dispatch a fresh subagent, collect findings, walk through them with you one at a time, update the plan only on your explicit approval, and run the validator as the hard gate.
 
-**See [`USAGE.md`](USAGE.md) for the complete walkthrough** — domain selection, finding disposition (Resolved / No Plan Change / Defer), severity semantics, diverse-critics option, manual validator runs, and a troubleshooting table.
+For each finding, the orchestrator follows a **didactic 4-part standard** (inspired by the ADR pattern from Microsoft / AWS / adr.github.io):
+
+1. Plain-language explanation of what is missing or wrong
+2. Practical consequence (anchored in observable cost — hours of rework, regulatory exposure, production bug)
+3. **Researched options** (2-4 alternatives, with sources cited for non-trivial technical decisions)
+4. Explicit **recommendation** marked `(Recommended)` with 1-2 sentences of justification
+
+Recommendations apply an **anti-overengineering filter** (prefer local edits, existing patterns, 80% solution + documented gap over 100% solution + sprawl) and a **propagation checklist** for findings that touch multiple sections or files.
+
+**See [`USAGE.md`](USAGE.md) for the complete walkthrough** — domain selection, the 4-part disposition standard (§4), propagation checklist for multi-section findings (§4.1), severity semantics, diverse-critics option, manual validator runs, and a troubleshooting table.
 
 ## Manual validation
 
@@ -95,14 +104,22 @@ A failing validator blocks the merge. This converts "we should review plans" int
 
 ## See also
 
-- `SPEC.md` for the full design rationale, research synthesis, and CNJ 615/2025 compliance mapping.
+- `SPEC.md` for the full design rationale, research synthesis, and CNJ 615/2025 compliance mapping. SPEC.md §17 (appendix) traces the calibration history derived from real-world use.
+- `USAGE.md` for the day-to-day operational guide.
+- `eval/RESULTS-*.md` for empirical evidence from seeded + real evals across all three reviewer domains.
 - The obra/superpowers PR #1473 that inspired this work, with the four corrections documented in `SPEC.md` section 1.
 
-## Open questions
+## Open questions (resolved during use)
 
-These are flagged in `SPEC.md` section 16 and deliberately left to you:
+The original open questions from `SPEC.md` section 16 have been resolved during real-world use:
 
-1. Final skill name (`plan-review-cycle` is the default; `kratos-plan-review` and `revisao-de-plano` are alternatives).
-2. Dispatch mechanism (named subagent vs general-purpose Task with prompt template; current SKILL.md uses the latter for portability).
-3. Whether to default to diverse critics for judicial plans (current default: single critic with opt-in for high-stakes plans).
+1. **Skill name:** `plan-review-cycle` confirmed (matches obra/superpowers PR familiarity; user-level install lives at `~/.claude/skills/plan-review-cycle/`).
+2. **Dispatch mechanism:** general-purpose Task with prompt template inlined (current SKILL.md approach; chosen for portability across Claude Code surfaces).
+3. **Diverse critics for judicial plans:** opt-in only for high-stakes plans (CNJ 615/2025 alto-risco categories, sentenças repetitivas), not default.
+4. **Round cap:** three rounds with mandatory escalation if round 3 still surfaces a Critical.
+
+Newer evolutionary candidates (from real-use evidence) are tracked in `eval/RESULTS-real-*.md`. Recent applied calibrations:
+
+- **Didactic 4-part disposition standard** (commit `abad346`): orchestrator translates technical reviewer output into plain language + practical consequence + researched options + explicit recommendation. Triggered by operator feedback that pre-calibration presentations were too technical and lacked justified recommendations.
+- **Propagation checklist for multi-section findings** (commit `a511f8c`): when a resolution touches 2+ sections or external files, the `plan_changes_made` field MUST contain explicit `- [x]` checklist enumerating every location. Triggered by 4 second-order findings in the pje-mcp SQLite plan eval (R2-PRC002/004/005/008) caused by auto-Resolved acceleration without propagation discipline.
 4. Round cap (current default: 3, with mandatory escalation at round 3 if Critical still appearing).

@@ -97,14 +97,49 @@ trail durável.
 
 ## 4. Dispondo cada achado
 
-Para cada achado, o orquestrador pergunta uma de três coisas:
+A skill segue um **padrão didático em 4 partes** mandatório para cada
+achado (inspirado no pattern ADR de Microsoft/AWS/adr.github.io). O
+orquestrador (Claude) traduz o output técnico do reviewer subagent
+para este formato antes de apresentar a você:
 
-### a) Resolved (mudar o plano)
+**Parte 1 — Explicação em linguagem simples**
+O orquestrador reescreve o achado em prosa elucidativa, evitando
+jargão. Se há termo técnico inescapável, explica em 5-10 palavras.
+Pode usar analogia quando ajuda.
 
-Você concorda com o achado e o plano vai mudar. O orquestrador propõe
-a mudança concreta, você aprova, ele edita o plano e marca o achado
-como `Resolved` com `plan_changes_made` apontando para as seções
-alteradas.
+**Parte 2 — Consequência prática**
+Não "viola contrato" abstrato; sim "implementador descobre na metade
+da Task 4 e gasta 1h refazendo migration", ou "DataJud responses
+sem `nivelSigilo` começariam a falhar silenciosamente em prod". O
+orquestrador ancora em custo observável.
+
+**Parte 3 — Opções pesquisadas (2-4)**
+Antes de apresentar opções, o orquestrador segue a regra
+**Research-before-recommend**: para decisões técnicas não-triviais
+(framework choice, security pattern, standard em flux), pesquisa
+WebSearch + docs + GitHub antes de propor. Cita fontes quando
+aplicável. Opções nunca são inventadas ad-hoc.
+
+**Parte 4 — Recomendação explícita com justificativa**
+Uma das opções é marcada `(Recommended)` com justificativa de 1-2
+frases ancorada em (a) simplicidade, (b) alinhamento com decisões
+anteriores do plano, ou (c) fit com o contexto do projeto. Sem
+recomendação implícita — você sempre sabe qual o orquestrador
+acha melhor e por quê.
+
+A pergunta final (`AskUserQuestion`) lista a opção RECOMENDADA
+primeiro com sufixo `(Recommended)`, depois alternativas, depois
+"No Plan Change", depois "Reject". Você pode escolher qualquer uma.
+
+### Os 4 outcomes possíveis
+
+#### a) Resolved (mudar o plano)
+
+Você aprova a proposta (ou alternativa). O orquestrador edita o plano
+e marca `Resolved` com `plan_changes_made` apontando para as seções
+alteradas. Para findings **multi-section** (que tocam 2+ seções/
+arquivos), o `plan_changes_made` carrega checklist explícito
+(veja §4.1 abaixo).
 
 Exemplo:
 > Achado: "Tarefa 4 sem critério de sucesso observável."
@@ -113,7 +148,7 @@ Exemplo:
 > 200ms' no fim da Tarefa 4. Aprovado?"
 > Você: "Sim."
 
-### b) No Plan Change (manter, com motivo)
+#### b) No Plan Change (manter, com motivo)
 
 Você não concorda OU o achado é fora de escopo OU está superseded por
 outro plano. O motivo precisa ser **concreto** — "vamos ver depois"
@@ -125,6 +160,8 @@ Exemplos de motivos válidos:
 - "Out of scope; tracking em backlog item #142."
 - "Superseded pelo refactor da ADR-0007 que muda a abordagem."
 - "Critério não se aplica porque feature é internal-only sem SLA."
+- "Defer para Fase 4 (homologação institucional formal); risco aceito
+  como trade-off de escopo controlado para read-only inicial."
 
 Exemplos de motivos que **falham** no validator:
 
@@ -132,16 +169,83 @@ Exemplos de motivos que **falham** no validator:
 - "Não é crítico."
 - "Concordo mas é minor."
 
-### c) Defer (deixar Open pra próxima rodada)
+#### c) Defer (deixar Open pra próxima rodada)
 
 Você quer pensar mais antes de decidir. Achado fica Open, o validator
 ainda bloqueia, e ele será re-apresentado na próxima rodada (ou
 explicitamente fechado depois).
 
-### d) Reject (re-propor)
+#### d) Reject (re-propor)
 
 Se a proposta do orquestrador não te satisfaz, você pede outra. Volta
 pra propose loop.
+
+### 4.1. Propagation checklist (findings multi-section)
+
+Quando a resolução de um achado toca **mais de uma seção do plano**
+OU **arquivos externos** (`.env.example`, spec file, README, config),
+o achado é multi-section e o `plan_changes_made` MUST conter checklist
+explícito enumerando cada local tocado:
+
+```yaml
+plan_changes_made: |
+  Aplicada Opção X (resumo de 1 linha). Propagação verificada:
+  - [x] §2: linha "Transações" reescrita com invariante sync
+  - [x] §8: assinaturas withTransaction(tx: DrizzleDB) em 4 repos
+  - [x] §13: nova entrada em tabela "Arquivos modificados"
+  - [x] tests/storage/global-setup.ts: novo arquivo
+```
+
+Por quê: na prática real, auto-Resolved acelera mas cria "propagation
+debt" quando o orquestrador aplica edit na seção principal e esquece
+de propagar pras tabelas/spec/config. O checklist torna visível pra
+você se algum item ficou esquecido, antes do próximo round catar.
+
+**Indicators de multi-section** (o orquestrador deve flagar
+automaticamente):
+- Adiciona env var, type alias, invariante, ou pattern que aparece em
+  múltiplos lugares
+- Resolução promete edits em outra seção ("inserir em §15", "atualizar
+  README", "spec amendment")
+- Adiciona nova task/sub-task referenciada em outros lugares
+- Muda contrato público com surfaces de audit/spec/test
+- Introduz build step que requer edits em source + dist/test config
+
+Findings single-section (typo, dead code, missing field em um único
+schema) NÃO precisam do checklist — `plan_changes_made` de uma linha
+basta.
+
+### 4.2. Restrição ao modo "auto-Resolved nos óbvios"
+
+O modo de aceleração "auto-Resolved nos óbvios + decide só os
+ambíguos" (que o orquestrador pode propor pra te poupar tempo)
+**não deve** ser aplicado a findings multi-section. Multi-section
+exige human walk-through OU auto-Resolved com checklist completo
+visível em chat antes de aplicar.
+
+Mixing auto-Resolved em multi-section é o failure mode que cria
+propagation debt — observado empiricamente em uso real.
+
+### 4.3. Princípio anti-overengineering
+
+Quando o orquestrador escolhe entre resoluções, prefere a mais
+simples viável:
+
+- **Local edits sobre new abstractions.** Se 3 linhas resolvem, não
+  propõe helper function.
+- **Existing patterns sobre new ones.** Se a codebase tem pattern
+  pra X, usa antes de inventar Y.
+- **80% solution + documented gap sobre 100% solution + sprawl.** Se
+  a versão simples cobre o spec MUST e a complexa cobre cenários
+  hipotéticos, recomenda simples + nota dos 20%.
+- **Custo de leitura conta tanto quanto custo de implementação.**
+  Solução clever que leva 10min pra entender depois custa mais que
+  verbosa que leva 1min.
+
+Exemplo real (PRC008 do plano SQLite pje-mcp): recomendei grep CI
+hook (5 linhas bash) sobre ESLint custom rule (30 LOC + 1 dep +
+test). Ambas resolviam o invariante "no `db.transaction(async`";
+grep cobre 95% por 1/10 do custo.
 
 ---
 
@@ -234,18 +338,32 @@ Não dispare o skill quando:
 
 ---
 
-## 11. Versões dos reviewers
+## 11. Versões dos reviewers e da skill
 
-Os reviewers evoluem com base nos evals. Versão atual de cada um:
+**Reviewer prompts** (cada rodada registra a versão usada no log):
 
 - `code-plan-reviewer@v0.4`
 - `judicial-plan-reviewer@v0.4`
 - `generic-plan-reviewer@v0.4`
 
-Cada rodada registra a versão usada no log. Se você atualizar o
-prompt, rodadas anteriores ficam rastreáveis pela versão registrada.
+Calibrações v0.2-v0.4 derivam de seeded evals; v0.5+ virá de uso real
+quando 3-5 planos reais convergirem em padrões consistentes.
 
-Histórico das calibrações em `eval/RESULTS*.md`.
+**Skill workflow** (definido em `SKILL.md` no orquestrador):
+
+- v0.1 (initial) — fluxo básico Skill → Agent → Log → Validator
+- v0.2 (commit `352d68d`) — output template v0.3 family-wide
+- v0.x didactic (commit `abad346`) — padrão didático 4-partes
+  mandatório para disposição (§4 deste guia), research-before-recommend
+  rule, anti-overengineering rule
+- v0.x propagation (commit `a511f8c`) — propagation checklist
+  mandatório para findings multi-section (§4.1 deste guia),
+  restrição de auto-Resolved (§4.2)
+
+Cada calibração da skill é derivada de evidência empírica documentada
+em `eval/RESULTS*.md`. Pattern reusable: calibração mid-session
+quando operador detecta padrão problemático é factível (~10min) e
+mensurável (operator approval rate como métrica).
 
 ---
 

@@ -356,4 +356,72 @@ These are decisions I would not make unilaterally; they are for you.
 
 ---
 
+## 17. Calibration history (appendix — derived from real use)
+
+The v0.1 spec above describes the design as conceived. The sections
+below trace evolutionary calibrations applied during seeded evals and
+real-world use. Each is anchored to an empirical observation
+documented in `eval/RESULTS-*.md`.
+
+### Reviewer prompts (`reviewers/*.md`)
+
+| Version | Trigger | Change | Evidence |
+|---|---|---|---|
+| v0.1 → v0.2 (code) | jsoncheck seeded eval R1 | Severity Guide: "spec-contract violation = Critical" anchor + "polish-only = Advisory" specific rule | `eval/RESULTS.md` R1→R2 |
+| v0.1 → v0.2 (judicial) | sentença consumerista seeded eval R1 | Severity Guide Critical: precedente vinculante explicit (CPC 927 II/III/IV) + dispositivo contaminado as structural vice | `eval/RESULTS-judicial.md` R1→R2 |
+| v0.2 → v0.3 (family-wide) | code R2 + judicial R2 output ambiguity | Output format: removed `### Recommendations` section; advisory findings go under `### Findings` with `Severity: Advisory` | `eval/RESULTS.md` R3 + `eval/RESULTS-judicial.md` R3 |
+| v0.3 → v0.4 (family-wide) | code R3 oscillation + judicial JC2 regression | Code Major: "silently-violatable MUST" anchor for NFR verification; Judicial Critical: promoted "omissão de tese defensiva expressamente articulada" from Calibração to Severity Guide; Generic: consolidation rule + regulatory-veto Critical anchor + polish-only specific rule | All three RESULTS files R4/R3/R2 |
+
+### Skill workflow (`SKILL.md`)
+
+| Calibration | Trigger | Change | Evidence |
+|---|---|---|---|
+| Didactic 4-part disposition standard | Operator feedback mid-session during pje-mcp SQLite plan eval: "explicações são muito técnicas e confusas; quero opções pesquisadas com recomendação explícita justificada" | New mandatory format per finding: (1) plain-language explanation, (2) practical consequence, (3) researched options 2-4, (4) explicit `(Recommended)` with justification. Plus Research-before-recommend rule + Anti-overengineering rule. ADR pattern from Microsoft/AWS/adr.github.io | `eval/RESULTS-real-02-pje-mcp-sqlite.md` "Major process event" section |
+| Propagation checklist for multi-section findings | 4 second-order findings in pje-mcp SQLite plan R2 (R2-PRC002/004/005/008) caused by auto-Resolved acceleration without propagation discipline | New mandatory `- [x]` checklist in `plan_changes_made` when resolution touches 2+ plan sections, spec file, config files, or README. Plus auto-Resolved restriction: must not be applied to multi-section findings without full checklist visible in chat before applying | `eval/RESULTS-real-02-pje-mcp-sqlite.md` patterns #1 and #2 |
+
+### Patterns observed across all evals (input for future calibration)
+
+1. **Each severity rule reshapes the reviewer's attention map.** v0.4
+   "silently-violatable MUST" anchor not only recalibrated NFR
+   verification but also surfaced a NEW finding (3-module layout vs
+   single-file MUST contradiction) that prior rounds missed. Severity
+   prompts are attention prompts.
+
+2. **Security-domain plans concentrate ~55% of findings on security
+   surfaces.** Marketing plans concentrate findings on
+   stakeholder/timeline/budget. Domain pattern matters for review
+   cost estimation.
+
+3. **Real-use calibration converges faster than seeded calibration.**
+   Seeded evals took 4 iterations (v0.1 → v0.4) to stabilize core
+   reviewer calibration. Real-use produced 2 high-leverage skill
+   calibrations in 2 plans. Hypothesis: real plans contain noise +
+   edge cases that seeded plans cannot replicate.
+
+4. **Mid-session calibration is operationally feasible.** The
+   didactic calibration during pje-mcp SQLite eval cost ~10min
+   end-to-end (diagnose + research + edit + reinstall + commit +
+   push) and produced measurable impact (operator approval rate 4/4
+   on ambíguous post-calibration dispositions).
+
+5. **Auto-Resolved acceleration trades precision for speed when
+   findings span multiple sections.** Propagation checklist (Skill
+   calibration #2) is the discipline that lets you have both:
+   acceleration for trivial findings + propagation discipline for
+   transversal ones.
+
+### Triangle of evidence for `code-plan-reviewer@v0.4`
+
+| Eval | Findings | False positives | Notes |
+|---|---|---|---|
+| jsoncheck seeded | 9 | 0 | Controlled test |
+| pje-mcp Fase 1 real | 18 | 0 | First real use |
+| pje-mcp SQLite "v2 pós-review" real | 26 | 0 | Second real use + mid-session skill calibration |
+
+Zero false positives across 53 findings in three reviewer domains
+(code, judicial, generic) is the empirical basis for treating the
+v0.4 calibration as stable.
+
+---
+
 End of spec.
