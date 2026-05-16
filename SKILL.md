@@ -165,6 +165,46 @@ Every reviewer finding starts as Open.
 
 Never silently discard a finding. Never decide a finding is invalid without recording the reasoning and obtaining human approval. Never update the plan unless the human partner explicitly confirms the disposition.
 
+### Propagation checklist (mandatory for multi-section findings)
+
+A finding is **multi-section** when its resolution requires edits in two or more of: distinct plan sections, the spec file, configuration files (`.env.example`, `package.json`, `vitest.config.ts`, etc.), CLAUDE.md, README, or any other file referenced by the plan.
+
+Recurring failure mode observed in real use: orchestrator applies the edit to the main section, marks Resolved, and silently leaves dangling references in tables, acceptance criteria sections, env-var documentation, or the spec — only for the next round to flag the gap as a new "second-order" finding. The 4 findings R2-PRC002/004/005/008 of the pje-mcp SQLite plan eval are concrete examples: each was a R1 disposition that touched the main section but failed to propagate to §15 acceptance criteria, env.example, claude-spec.md, or `npm run validate` config.
+
+**Rule**: when a finding is multi-section, the `plan_changes_made` field MUST contain an explicit checklist enumerating every section/file the resolution touches, with each item checked off. Format:
+
+```yaml
+plan_changes_made: |
+  Aplicada Opção X (one-line summary). Propagação verificada:
+  - [x] §<main-section>: edit principal (one-line)
+  - [x] §<related-section>: cross-reference atualizada (one-line)
+  - [x] <other-file>: campo/linha Y adicionada (one-line)
+  - [x] <config-file>: setting Z incluído (one-line)
+```
+
+If any box is unchecked at disposition time, the finding stays Open. The validator does not parse the checklist semantically (it accepts the prose), but the orchestrator commits to checking each item before flipping to Resolved.
+
+### Multi-section indicators
+
+Auto-categorize as multi-section if any of the following is true:
+
+- Resolution adds a new env var, type alias, invariant, or pattern that needs to appear in multiple sections of the plan
+- Resolution promises edits in another section ("inserir em §15", "atualizar README", "spec amendment a refletir")
+- Resolution adds a new task or sub-task referenced elsewhere (e.g., new test file mentioned in §11 must appear in §15 acceptance criteria)
+- Resolution changes a public contract that has audit/spec/test surfaces
+- Resolution introduces a build step that requires updating both source and dist/test config
+
+Single-section findings (typo in one paragraph, dead code in one function, missing field in one schema block) are NOT multi-section and do not require the checklist — direct one-line `plan_changes_made` suffices.
+
+### Auto-Resolved restriction
+
+The "auto-Resolved nos óbvios + decide só os ambíguos" interaction mode (which the orchestrator may propose to accelerate disposition) MUST NOT be applied to multi-section findings. Multi-section findings require either:
+
+- Human walk-through with the propagation checklist surfaced explicitly, OR
+- Auto-Resolved IF and ONLY IF the orchestrator produces the full propagation checklist with every item checked, visible in chat before applying.
+
+Mixing auto-Resolved into multi-section findings is the failure mode that creates propagation debt. The shortcut is fine for trivial findings; the discipline matters for transversal ones.
+
 ## Severity semantics
 
 | Severity | Blocks execution while Open? | Use for |
